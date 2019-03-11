@@ -1,0 +1,9 @@
+Export Date-Time: 01/30/2019 15:7:39
+Capture Date-Time: 1/30/2019 14:28:13
+Z Planes: 1
+Time Points: 1
+Channels: 1
+Microns Per Pixel: 1.47441
+Z Step Size Microns: 0
+IFD	X Position (um)	Y Position (um)	Z Position (um)	Elapsed Time (ms)	Channel Name	TIFF File Name
+0	16851.1	11261	447.122	0	PMT 2	A08aGCaMP_SuccessfulStim_AcquisitionPlane_XY0_Z0_T0_C0.tif
