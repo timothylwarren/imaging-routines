@@ -25,7 +25,7 @@ gs = gridspec.GridSpec(num_rows, num_col, figure=fig)
 tmlapse_in_s=.11963
 for cr_frame in np.arange(40):
 	#col_vl=np.mod(cr_frame,num_rows)
-	print('colct=%d'%colct)
+	#print('colct=%d'%colct)
 	#row_vl=np.mod(cr_frame,num_col)
 	ax=fig.add_subplot(gs[rowct,colct])
 	plt.imshow(im[cr_frame,:])
