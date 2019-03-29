@@ -1,22 +1,28 @@
 import matplotlib.pyplot as plt
+import file_utilities as util
 import skimage.io
 import numpy as np
 from roipoly import RoiPoly
+import pdb
+
 plt.ion()
 #this needs to be set to be location of your tif file.
-data_path= '/Users/tim/python_packages/2p_imaging/example_data/'
+data_path= '/Users/tim/data/2pdata/exported_tifs/'
+file_name= 'Streaming Phasor Capture - 1_XY0_Z0_T000_C0.tif'
 
 #read in tif file
-im=skimage.io.imread(data_path + 'Streaming Phasor Capture - 5_XY0_Z0_T00_C0.tif')
+im=util.read_in_tif(data_path + file_name)
 
 #take mean of file across all time points
-im_mean=np.mean(im,axis=0)
 
-#plt.colormap('hot')
+im_mean=np.mean(im,axis=0)
 plt.figure()
+plt.imshow(im_mean)
+#plt.colormap('hot')
+pdb.set_trace()
 #restrict the area to relevant 100x100 pixel region
 im_cut=im_mean[150:250,150:250]
-plt.imshow(im_cut)
+
 zoom_xlim=[150,230]
 zoom_ylim=[250,140]
 
