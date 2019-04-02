@@ -27,19 +27,21 @@ matplotlib.rcParams["font.size"] = 7
 #'Streaming Phasor Capture - 5_XY0_Z0_T0000_C0.tif','Streaming Phasor Capture - 6_XY0_Z0_T0000_C0.tif','Streaming Phasor Capture - 7_XY0_Z0_T0000_C0.tif']
 SUMMARY_DATA_LOCATION='/Users/tim/data/2p_summary_data/'
 
-datpath='/Volumes/LaCie/2pdata/march28/unc-5/animal4/'
+datpath='/Volumes/LaCie/2pdata/march27_unc-5/animal3/'
 microns_per_pixel=1.47441
-
+target_vals={}
+target_vals['on']=[[39,78],[93,71]]
+target_vals['off']=[[70,66],[77,80]]
 def main():
     meta_dt={}
     meta_dt['data_path']= datpath
-    meta_dt['meta_file_name']='anim4_plotdata.pck'
+    meta_dt['meta_file_name']='anim3_plotdata.pck'
 
 
     save_dat_file_name=datpath.split('/')[-3] +'_' + datpath.split('/')[-2] + '.pck'
     save_fig_file_name=datpath.split('/')[-3] +'_' + datpath.split('/')[-2] + '.eps'
     meta_dt=fh.open_pickle(meta_dt['data_path']+meta_dt['meta_file_name'])
-    pdb.set_trace()
+    
     file_names=meta_dt['file_names']
 
     if meta_dt['on_depths'] is 'odd':
@@ -51,7 +53,7 @@ def main():
     deltaf_out={} 
 
     dt=fh.open_pickle(meta_dt['data_path']+file_names[0]+'.pck')
-    all_depths=np.array(dt['stim_depths'])[::2]
+    
 
     max_value=[]
     for file_ind,crfile in enumerate(file_names):
@@ -60,7 +62,7 @@ def main():
                 deltaf_out[file_ind][key]={}
                 #deltaf_out[file_ind][key]['fvl']={}
                 deltaf_out[file_ind][key]['depth']=[]
-                deltaf_out[file_ind][key]['fvl']=[]
+                deltaf_out[file_ind][key]['fvl_raw']=[]
         
 
     fig=plt.figure()
@@ -69,9 +71,12 @@ def main():
     #ax2=fig.add_subplot(gs[3:6,0])
     #ax3=fig.add_subplot(gs[6:9,0])
     ROWCT=0
+    plt.set_cmap('viridis')
+
     for file_ind,crfile in enumerate(file_names):
         if file_ind>0:
             dt=fh.open_pickle(meta_dt['data_path']+crfile+'.pck')
+        all_depths=np.array(dt['stim_depths'])[::2]
         stim_height=500
         stim_len=0.1
         
@@ -79,30 +84,43 @@ def main():
         
         #tmlapse_in_s=.11963
 
-
+        if file_ind==0:
+            for targind,targkey in enumerate(target_vals.keys()):
+                imobj=ax1.imshow(dt['im_mean'],origin='lower')
+                #ax[crind].plot([160,160+10/microns_per_pixel],[150,150],'r')
+                for circind in [0,1]:
+                    cr_center=target_vals[targkey][circind]
+                    circ=plt.Circle((cr_center[0],cr_center[1]),radius=5/microns_per_pixel,edgecolor='c',facecolor='None')
+                    ax1.add_patch(circ)
         
         #plot mean image and rois
         if file_ind==0:
             
-            ax1.imshow(dt['im_mean'],origin='lower')
-            fpl.adjust_spines(ax1,[])
+            imobj=ax1.imshow(dt['im_mean'],origin='lower')
+            #fpl.adjust_spines(ax1,[])
         
         #for axind,crax in enumerate([ax1,ax2,ax3]):
             
         plt.sca(ax1)
-           
+       
         for cr_roi in dt['roi']:
             cr_roi.display_roi(linewidth=0.2)
             
-                
-        ax1.imshow(dt['stim_mask'][0],cmap='Greens',alpha=0.5,origin='lower')
-        ax1.imshow(dt['stim_mask'][1],cmap='Reds',alpha=0.5,origin='lower')
+        #try:       
+         #   ax1.imshow(dt['stim_mask'][0],cmap='Greens',alpha=0.5,origin='lower')
+          #  ax1.imshow(dt['stim_mask'][1],cmap='Reds',alpha=0.5,origin='lower')
+        #except:
+         #   tst=1
         #crax.imshow(dt['stim_edges'][CT-1],origin='lower')
             #if axind==1:
              #   crax.set_title('on target')
             #if axind==2:
              #   crax.set_title('off target',color='r')
-        
+        imobj.set_clim(300,1200)
+        ax1.set_xlim(25,100)
+        ax1.set_ylim(40,95)
+        ax1.plot([40,40+10/microns_per_pixel],[50,50],'w')
+
         fpl.adjust_spines(ax1,[])
 
         #for crind in np.array(meta_dt['roi_to_plot']):
@@ -110,6 +128,7 @@ def main():
         crax=fig.add_subplot(gs[ROWCT:ROWCT+2,2:5])
         fpl.adjust_spines(crax,[])
         ROWCT=ROWCT+2
+        
         crax.plot(dt['frame_tms'],dt['mn_roi'][roi_ind],'k',linewidth=0.3)
         stim_tms=np.unique(dt['stim_tms'])
     #add stimulation events to subplot
@@ -122,7 +141,7 @@ def main():
         
         for depth_ind,cr_depth in enumerate(all_depths):
 
-            crax.text(stim_tms[depth_ind],stim_height+50,str(int(cr_depth)),fontsize=2,color='k')
+            crax.text(stim_tms[depth_ind],stim_height+50,str(int(cr_depth)),fontsize=5,color='k')
 
     #fpl.adjust_spines(ax1,['bottom','left'])
         fpl.adjust_spines(crax,['bottom','left'])
@@ -139,9 +158,11 @@ def main():
         for stim_ind,crtime in enumerate(stim_tms):
             delta_f=(dt['deltaf_vls']['pst_f'][roi_ind][stim_ind]-dt['deltaf_vls']['pre_f'][roi_ind][stim_ind])/dt['deltaf_vls']['pre_f'][roi_ind][stim_ind]
             target_depth=meta_dt['on_target_depth']
-            
-            crdepth=target_depth-all_depths[stim_ind]
-
+            try:
+                
+                crdepth=target_depth-all_depths[stim_ind]
+            except:
+                pdb.set_trace()
                      
             if np.mod(stim_ind,2) == 1:
                 crkey=odd_key
@@ -150,28 +171,35 @@ def main():
 
             
 
-            deltaf_out[file_ind][crkey]['fvl'].append(delta_f)
+            deltaf_out[file_ind][crkey]['fvl_raw'].append(delta_f)
             deltaf_out[file_ind][crkey]['depth'].append(crdepth)
             
 
         max_value.append(get_max_value(deltaf_out,file_ind))
+    
     for file_ind,crfile in enumerate(file_names):
         if file_ind==0:
             axraw=fig.add_subplot(gs[7:,2])
             axnorm=fig.add_subplot(gs[7:,4])
-        plt_util.plot_raw_vert(axraw,deltaf_out[file_ind])
+        plt_util.plot_raw_vert(axraw,deltaf_out[file_ind],norm_flag=False)
         axraw.set_xlabel('deltaF/F')
         axraw.set_ylabel('depth relative to dbd plane \n microns')
-        plt_util.plot_raw_vert(axnorm,deltaf_out[file_ind],max_value=max_value[file_ind])
+        #plt_util.plot_raw_vert(axnorm,deltaf_out[file_ind],nmax_value=max_value[file_ind])
         axnorm.set_xlabel('normalized deltaF/F')
         axnorm.set_ylabel('depth relative to dbd plane \n microns')
     outdt={}
     outdt['delta_f']=deltaf_out
-    outdt['max_value']=max_value            
+    outdt['max_value']=max_value
+    crdepths=outdt['delta_f'][0]['on']['depth']
+    unq_depths=np.unique(crdepths)
+    if len(unq_depths)<len(crdepths):
+        deltaf_out=correct_non_unique_depths(deltaf_out,crdepths)
+                 
     plt.suptitle(save_fig_file_name)
     plt.savefig(SUMMARY_DATA_LOCATION+save_fig_file_name)
 
     summary_file=SUMMARY_DATA_LOCATION +save_dat_file_name
+    
     fh.save_to_pickle(summary_file, outdt)
 
 
@@ -179,9 +207,25 @@ def get_max_value(deltaf_out,file_ind):
     
     max_list=[]
     for keyind,key in enumerate(['on','off']):
-        max_list.append(np.max(deltaf_out[file_ind][key]['fvl']))
+        max_list.append(np.max(deltaf_out[file_ind][key]['fvl_raw']))
     return np.max(max_list)
     
+
+
+def correct_non_unique_depths(df,crdepths):
+    
+    duplicate=[idx for idx, item in enumerate(crdepths) if item in crdepths[:idx]]
+    dup=duplicate[0]
+    for crkey in df.keys():
+        for targkey in df[crkey].keys():
+            crdt=df[crkey][targkey]
+            comb_inds=np.where(crdt['depth']==crdt['depth'][dup])[0]
+            
+            df[crkey][targkey]['depth']=crdt['depth'][0:comb_inds[0]] + [crdt['depth'][dup]] +crdt['depth'][comb_inds[1]+1:]
+            df[crkey][targkey]['fvl_raw']=crdt['fvl_raw'][0:comb_inds[0]] + [np.mean([crdt['fvl_raw'][dup-1],crdt['fvl_raw'][dup]])] + crdt['fvl_raw'][comb_inds[1]+1:]
+    
+    return df
+
 
 # def prep_for_plotting(deltaf_out,max_value):
 #     df=deltaf_out

@@ -12,23 +12,30 @@ plt.ion()
 #this needs to be set to be location of your tif file.
 STIM_FLAG=True
 PLOT_STIM_REGION=False
-USE_PREVIOUS_ROI=False
+USE_PREVIOUS_ROI=True
+USE_META_DT_FILE=True
 UNIQUE_STIM_EVENTS=2
-PREVIOUS_ROI_FILE='---Streaming Phasor Capture - 4_XY0_Z0_T0000_C0.tif'
+TIME_BETWEEN_FRAMES=.12642225
+stim_frame_offset_from_metadata=2
+PREVIOUS_ROI_FILE='---Streaming Phasor Capture - 8_XY0_Z0_T0000_C0.tif'
 #logfile='photo12.txt'
-data_path= '/Volumes/LaCie/2pdata/march26/animal12/'
+data_path= '/Volumes/LaCie/tstdir/'
+meta_dt_file='anim5_plotdata.pck'
 stim_meta_dir='photomanipulation_data/'
 #file_names= ['---Streaming Phasor Capture - 1_XY0_Z0_T000_C0.tif']
-file_names=['---Streaming Phasor Capture - 4_XY0_Z0_T0000_C0.tif']
+file_names=['---Streaming Phasor Capture - 8_XY0_Z0_T0000_C0.tif']
 timelapse_interval=.12579
-stim_times=[10,20,30,40,50,60]
-heights=[82,161,240,319,399,478]
+
 stim_region={}
 colors=['c','g','m','b']
-PREF_WINDOW=[1,0.4]
-POSTF_WINDOW=[0, .6]
+preframes=20
+postframes=5
 #read in tif file
 
+if USE_META_DT_FILE:
+    meta_dt=fh.open_pickle(data_path+meta_dt_file)
+    file_names=meta_dt['file_names']
+    PREVIOUS_ROI_FILE=file_names[0]
 
 #im is a dictionary with tifstack and metadata about imaging from PMT
 for file_name in file_names:
@@ -37,7 +44,7 @@ for file_name in file_names:
     if STIM_FLAG:
         logfile=file_name.split('_')[0]+'.txt'
         stimfile=data_path + stim_meta_dir + logfile
-        (stim_depths,stim_times)=util.get_stim_depths(stimfile)
+        (stim_depths,erroneous_stim_times)=util.get_stim_depths(stimfile)
         
         roi_file=stimfile.split('.txt')[0] + '-points.txt'
         (stim_region['xlist'],stim_region['ylist'])=util.get_stim_region(roi_file,unique_events=UNIQUE_STIM_EVENTS)
@@ -146,10 +153,10 @@ for file_name in file_names:
         sumdt['zoom_vls']['xvls']=xvls
         sumdt['zoom_vls']['yvls']=yvls
 
-
-    stim_tms=util.convert_stim_times(stim_times)
+    
+    (stim_tms,stim_frame_nums)=util.convert_stim_times(stim['stim_frame_nums'],frame_flag=True,offset=stim_frame_offset_from_metadata,time_between_frames=TIME_BETWEEN_FRAMES)
     frame_tms=[float(i) for i in im['time_stamps']]
-    deltaf_vls=util.get_delta_f(stim_tms,mn_roi,frame_tms,PREF_WINDOW,POSTF_WINDOW)
+    deltaf_vls=util.get_delta_f(mn_roi,stim_frame_nums,preframes,postframes,pre_frame_buffer=2)
 
     sumdt['im_mean']=im_zoom_mean
     sumdt['stim_mask']=stim_mask
@@ -162,7 +169,8 @@ for file_name in file_names:
     sumdt['stim_depths']=[float(i) for i in stim_depths]
     sumdt['stim_region']=stim_region
     sumdt['stim_edges']=stim_edges
-
+    sumdt['stim_frame_nums']=stim_frame_nums
+    
     fh.save_to_pickle(data_path+file_name + '.pck', sumdt)
 
 

@@ -11,18 +11,18 @@ import matplotlib as mpl
 ####
 
 #here I don't plot 10th-13th frame b/c that's when stimulation occurs.
-data_path= '/Volumes/LaCie/2pdata/march25/animal4/'
+data_path= '/Volumes/LaCie/2pdata/march26/animal4/'
 
 #file_names= ['2x 10 micron diam z-stack0space seperation _XY1553116043_Z000_T0_C0.tif']
 #'2x 10 micron diam z-stack4space seperation _XY1553116200_Z000_T0_C0.tif','2x 10 micron diam z-stack8space seperation _XY1553116392_Z000_T0_C0.tif',
 #file_names'2x 10 micron diam z-stack12space seperation _XY1553116511_Z000_T0_C0.tif','2x 10 micron diam z-stack16space seperation _XY1553116631_Z000_T0_C0.tif',
 #file_names=['2x 10 micron diam z-stack16space seperation _XY1553116631_Z000_T0_C0.tif']
-file_names=['Snap image - 3_XY0_Z0_T0_C0.tif','Snap image - 4_XY0_Z0_T0_C0.tif']
-pck_name='---Streaming Phasor Capture - 2 - 1_XY0_Z0_T0000_C0.tif.pck'
+file_names=['Snap image - 1_XY0_Z0_T0_C0.tif','Snap image - 2_XY0_Z0_T0_C0.tif']
+pck_name='---Streaming Phasor Capture - 7_XY0_Z0_T0000_C0.tif.pck'
 #file_name=['2x 10 micron diam z-stack20space seperation  - 1_XY1553116792_Z000_T0_C0.tif']
 microns_per_pixel=1.47441
-on_target_centers=[[217,230],[229,241]]
-off_target_centers=[[220,222],[213,239]]
+off_target_centers=[[183,167.5],[196,169]]
+on_target_centers=[[190,168],[193,154]]
 UNIQUE_STIM_EVENTS=1
 fig=plt.figure()
 ax=[]
@@ -41,17 +41,17 @@ for crind in np.arange(len(file_names)):
     plt.set_cmap('hot')
     imobj=ax[crind].imshow(dt['tifstack'])
     #imobj.set_clim(200,2000)
-    ax[crind].set_xlim(100,300)
-    ax[crind].set_ylim(100,300)
+    ax[crind].set_xlim(150,220)
+    ax[crind].set_ylim(130,200)
     if crind==0:
-        imobj.set_clim(100,400)
-    if crind==1:
         imobj.set_clim(100,600)
+    if crind==1:
+        imobj.set_clim(150,500)
     imobj=ax[crind+2].imshow(dt['tifstack'])
     imobj.set_clim(100,900)
     #imobj.set_clim(200,2000)
-    ax[crind+2].set_xlim(100,300)
-    ax[crind+2].set_ylim(100,300)
+    ax[crind+2].set_xlim(160,220)
+    ax[crind+2].set_ylim(130,200)
 
     y=np.zeros(np.shape(dt['tifstack']))
     
@@ -60,22 +60,22 @@ for crind in np.arange(len(file_names)):
     y[yvls,xvls]=1
     y=np.ma.masked_where(y==0,y)
     
-    ax[crind].imshow(y,cmap='Reds',alpha=0.7,interpolation='nearest')
+    #ax[crind].imshow(y,cmap='Reds',alpha=0.7,interpolation='nearest')
     if crind==1:
         ax[crind].plot([160,160+10/microns_per_pixel],[150,150],'r')
         cr_center=on_target_centers[0]
-        circ=plt.Circle((cr_center[0],cr_center[1]),radius=5/microns_per_pixel,edgecolor='k',facecolor='None')
+        circ=plt.Circle((cr_center[0],cr_center[1]),radius=5/microns_per_pixel,edgecolor='g',facecolor='None')
         ax[crind].add_patch(circ)
         cr_center=on_target_centers[1]
-        circ=plt.Circle((cr_center[0],cr_center[1]),radius=5/microns_per_pixel,edgecolor='k',facecolor='None')
+        circ=plt.Circle((cr_center[0],cr_center[1]),radius=5/microns_per_pixel,edgecolor='g',facecolor='None')
         ax[crind].add_patch(circ)
     if crind==0:
         cr_center=off_target_centers[0]
-        circ=plt.Circle((cr_center[0],cr_center[1]),radius=5/microns_per_pixel,edgecolor='g',facecolor='None')
+        circ=plt.Circle((cr_center[0],cr_center[1]),radius=5/microns_per_pixel,edgecolor='k',facecolor='None')
         ax[crind].add_patch(circ)
 
         cr_center=off_target_centers[1]
-        circ=plt.Circle((cr_center[0],cr_center[1]),radius=5/microns_per_pixel,edgecolor='g',facecolor='None')
+        circ=plt.Circle((cr_center[0],cr_center[1]),radius=5/microns_per_pixel,edgecolor='k',facecolor='None')
         ax[crind].add_patch(circ)
 
     xvls=np.array(stim_region['xlist'][1])
@@ -83,12 +83,13 @@ for crind in np.arange(len(file_names)):
     y=np.zeros(np.shape(dt['tifstack']))
     y[yvls,xvls]=1
     y=np.ma.masked_where(y==0,y)
-    ax[crind].set_xlim(180,280)
-    ax[crind].set_ylim(180,280)
-    ax[crind].plot([200,200+10/microns_per_pixel],[190,190],'c')
+    #ax[crind].set_xlim(0,300)
+    #ax[crind].set_ylim(0,300)
+    ax[crind].plot([200,200+10/microns_per_pixel],[170,170],'c')
     fpl.adjust_spines(ax[crind],[])
+    #fpl.adjust_spines(ax[crind],[])
     
-    ax[crind].imshow(y,cmap='Reds',alpha=0.7,interpolation='nearest')
+    #ax[crind].imshow(y,cmap='Reds',alpha=0.7,interpolation='nearest')
     #fpl.adjust_spines(ax[crind],'')
     
     #xvls=np.array(stim_region['xlist'][1])

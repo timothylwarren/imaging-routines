@@ -38,7 +38,7 @@ for file_name in file_names:
         logfile=file_name.split('_')[0]+'.txt'
         stimfile=data_path + stim_meta_dir + logfile
         (stim_depths,stim_times)=util.get_stim_depths(stimfile)
-        
+        pdb.set_trace()
         roi_file=stimfile.split('.txt')[0] + '-points.txt'
         (stim_region['xlist'],stim_region['ylist'])=util.get_stim_region(roi_file,unique_events=UNIQUE_STIM_EVENTS)
 

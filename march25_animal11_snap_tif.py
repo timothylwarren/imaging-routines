@@ -46,7 +46,7 @@ for crind in np.arange(len(file_names)):
     #imobj.set_clim(200,2000)
     ax[crind+2].set_xlim(120,240)
     ax[crind+2].set_ylim(120,240)
-    imobj.set_clim(100,400)
+    imobj.set_clim(250,300)
     y=np.zeros(np.shape(dt['tifstack']))
     
     xvls=np.array(stim_region['xlist'][0])

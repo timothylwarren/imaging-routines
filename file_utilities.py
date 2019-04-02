@@ -12,11 +12,17 @@ def read_in_tif(filename):
 
 def read_in_tif_and_get_metadata(filename):
 #this needs to be set to be location of your tif file.
+    time_between_frames=.12642225
     im={}
     stim={}
     im['tifstack']=skimage.io.imread(filename)
-    (im['time_stamps'],im['frame_nums'],stim['stim_time_stamps'])=get_time_stamps(filename)
+    num_frames=np.shape(im['tifstack'])[0]
+    im['time_stamps']=np.linspace(time_between_frames,time_between_frames*num_frames,num_frames)
+
+    (im['erroneous_time_stamps'],im['frame_nums'],stim['stim_frame_nums'])=get_time_stamps(filename)
+    
     return(im,stim)
+
 
 	#redataata_path= '/Users/tim/data/2pdata/exported_tifs/'
 	#file_name= 'Streaming Phasor Capture - 1_XY0_Z0_T000_C0.tif'
@@ -45,10 +51,12 @@ def get_time_stamps(filename):
     time_stamps=[]
     image_frame_nums=[]
     stim_times=[]
+    
     with open (filename + '.xml') as fd: 
         doc=xmltodict.parse(fd.read())
       
         all_planes=doc['OME']['Image']['Pixels']['Plane']
+    
         for crplane in all_planes:
 
             time_stamps.append(crplane['@DeltaT'])
@@ -90,18 +98,24 @@ def get_stim_depths(logfilein):
 
     return (depths,times)
 
-def convert_stim_times(stim_times):
+def convert_stim_times(stim_times,frame_flag=False,offset=False,time_between_frames=.12642225):
     converted_times=[]
-    for i in stim_times:
-        vls=i.split(':')
-        converted_times.append(float(vls[-1])+60*float(vls[-2]))
-    return converted_times
+    converted_frames=[]
+    for i in stim_times[1:]:
+        if not frame_flag:
+            vls=i.split(':')
+            converted_times.append(float(vls[-1])+60*float(vls[-2]))
+        else:
+           crframe=int(i)-offset
+           converted_frames.append(crframe)
+           converted_times.append((crframe+1)*time_between_frames)
+    return (converted_times,converted_frames)
 
-def get_delta_f(stim_tms,mn_roi,frame_tms,PREF_WINDOW,POSTF_WINDOW):
-    u, ind = np.unique(stim_tms, return_index=True)
-    sorted_tms=u[np.argsort(ind)]
+def get_delta_f(mn_roi,stim_frames,preframes,postframes,pre_frame_buffer=0):
+    u, ind = np.unique(stim_frames, return_index=True)
+    sorted_frames=u[np.argsort(ind)]
     st={}
-    st['sorted_tms']=sorted_tms
+    st['sorted_frames']=sorted_frames
     st['pre_f']={}
     st['pst_f']={}
     for cr_roi_ind in np.arange(len(mn_roi)):
@@ -111,17 +125,17 @@ def get_delta_f(stim_tms,mn_roi,frame_tms,PREF_WINDOW,POSTF_WINDOW):
 
     
     for cr_roi_ind in np.arange(len(mn_roi)):
-        for crtm in sorted_tms:
-            prewindow=[crtm-PREF_WINDOW[0],crtm-PREF_WINDOW[1]]
-            pstwindow=[crtm+POSTF_WINDOW[0],crtm+POSTF_WINDOW[1]]
+        for crframe in sorted_frames:
+            #prewindow=[crtm-PREF_WINDOW[0],crtm-PREF_WINDOW[1]]
+            #pstwindow=[crtm+POSTF_WINDOW[0],crtm+POSTF_WINDOW[1]]
             
-            preframe_inds=np.intersect1d(np.where(frame_tms>=prewindow[0]),np.where(frame_tms<=prewindow[1]))
-            postframe_inds=np.intersect1d(np.where(frame_tms>=pstwindow[0]),np.where(frame_tms<=pstwindow[1]))
+            #preframe_inds=np.intersect1d(np.where(frame_tms>=prewindow[0]),np.where(frame_tms<=prewindow[1]))
+            #postframe_inds=np.intersect1d(np.where(frame_tms>=pstwindow[0]),np.where(frame_tms<=pstwindow[1]))
            
-            st['pre_f'][cr_roi_ind].append(np.mean(np.array(mn_roi[cr_roi_ind])[preframe_inds]))
+            st['pre_f'][cr_roi_ind].append(np.mean(np.array(mn_roi[cr_roi_ind])[crframe-preframes-pre_frame_buffer:crframe-pre_frame_buffer]))
             
-            st['pst_f'][cr_roi_ind].append(np.mean(np.array(mn_roi[cr_roi_ind])[postframe_inds]))
-           
+            st['pst_f'][cr_roi_ind].append(np.mean(np.array(mn_roi[cr_roi_ind])[crframe+1:crframe+postframes+1]))
+            
     return st
 
            
