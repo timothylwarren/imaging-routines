@@ -1,15 +1,37 @@
-# 2p_imaging
+# elife_larvae_2019
+Code associated with Elife Submission 2019:
+Regulation of subcellular dendritic synapse specificity by axon guidance cues
+Emily C. Sales, Emily L. Heckman, Timothy L. Warren, and Chris Q. Doe* 
+
+Repository consists of Python scripts written by
 Timothy Warren, timlwarren AT gmail
-Python scripts to analyze data collected in Slidebook on Doe LAb 2-p
-Current version has three core files
 
-**plot_all_frames_of_a_tif.py**
-This assumes tif has been exported from within slidebook. This reads frames in from a tif and plots all frames as a series of images.
-An example call to this script is in jupyter notebook plot_all_frames.ipynb
+Also:
+(1)  PairwiseWilcoxTest.R 
+written by Emily Sales 
 
-**plot_roi_timecourse.py**
-Allows you to select an roi (could be modified to select multiple rois) and plots a time course of mean fluorescence at that roi
+(2) supplemental_matlab_code.txt
+MATLAB code written by Brandon Mark
 
-**make_images_for_video.py**
-Saves a series of png files from tif, which could then be used to make video.
-    
+Python scripts to analyze data collected in Slidebook.
+
+Workflow is to 
+(1) Read in raw data from tif files and manually select ROIs.
+**plot_roi_time_course_2.py**
+
+This saves a .pck file with data associated from the experiment.
+
+(2) Make plots of data for different ROIs
+**misc_py_files/just_plotting.py**
+
+(3) Example traces from Paper in
+**misc_py_files/plot_example_traces_unc5_animal3.py**
+**misc_py_files/plot_example_traces_wt_animal1.py**
+
+(4) Summary data in
+**summary_py_files/summary_plot_unc5.py**
+**sumarray_py_files/summary_plot.py**
+
+
+
+
