@@ -1,0 +1,848 @@
+MATLAB code used for analyzing confocal optogenetics in Sales, Heckman, and Doe, 2019. For any questions, contact Brandon Mark at bmark@uoregon.edu
+
+---
+title: "README"
+
+---
+
+This repository contains calcium imaging analysis scripts written MATLAB used for: "Regulation of subcellular dendritic synapse specificity by axon guidance cues" by Sales et al 2019.  The scripts use the open microscopy bioformats package to read either .czi or .tif files, although they can be easily adapted for any file type.  
+
+To use the package, run Calcium_Imaging_Script and follow the prompt instructions.
+
+There are two outputs of the Calcium_Imaging_Script.  
+
+	1.  Variable output:   includes the registered image data, ROIs, stimulus metadata, raw traces, and DF/F traces.  This file will exist regardless of whether stimulus data was analyzed. 
+
+	2.  Trace_Data output: includes a structure containing the relevant variables used for analyzing stimulus data.
+
+In order to generate the average stimulus traces across animals,  run Average_Traces.m.  This file will take all Trace_Data files you wish to average, and output an average simulus response graph as well as two .mat files: 
+
+	1.  Average_Trace_Data:  Essentially all of the data used to calculate the average trace including included experiment names, pre/post-stimulus df values, and stimulus metadata.
+
+	2.  Post_stimulus_DF:  This contains a single vector which includes the post-stimulus DF values from each experiement.  
+    
+In order to generate the bargraph of DF/F changes across two conditions, run Average_Stim_Bar_Graph.m.  This file will just take the post-stim_df values from two relevant conditions and make a bargraph and do basic stats.
+
+
+
+DEPENDENCIES:
+
+	1. Bioformats: https://www.openmicroscopy.org/bio-formats/downloads/
+	2. ShadedErrorBar: https://github.com/raacampbell/shadedErrorBar
+
+
+
+% Compare Multiple Conditions DF/F 
+
+%% Get Data
+
+number_of_conditions = input('How Many Conditions?')
+for i = 1:number_of_conditions
+    [filename, pathname] = uigetfile('Post_Stimulus_Df')
+    load(strcat(pathname,'/',filename));
+    experiment_name = strsplit(filename,'.');
+    experiment_name = experiment_name{1,1};
+    Experiments(i).Experiment_Name = experiment_name; clear filename and experiment_name and pathname
+    Experiments(i).Post_Stim_Df = Post_stimulus_delta_f; clear Post_stimulus_delta_f
+    Experiments(i).Condition = input('Title of Condition ie ATR+ (ENTER IT LIKE A STRING BOUNDED with '')');
+end
+for i = 1:number_of_conditions
+    Conditions{i} = Experiments(i).Condition;
+end
+Condition_1_mean = mean(Experiments(1).Post_Stim_Df)
+Condition_2_mean = mean(Experiments(2).Post_Stim_Df)
+Condition_1_std = std(Experiments(1).Post_Stim_Df)
+Condition_2_std = std(Experiments(2).Post_Stim_Df)
+%%
+[h_ktest_c1,p_ktest_c1,k_teststat1] = kstest(Experiments(1).Post_Stim_Df)
+[h_ktest_c2,p_ktest_c2, k_teststat2] = kstest(Experiments(2).Post_Stim_Df)
+if h_ktest_c1 == 0 & p_ktest_c1<=.05 & h_ktest_c2==0 &p_ktest_c2<=.05
+    disp('Doing ttest')
+    [~,pval_ttest,ci,ttest_stats] = ttest2(Experiments(1).Post_Stim_Df,Experiments(2).Post_Stim_Df)
+else
+    disp('Doing Mann-Whitney')
+    [pval_mw,~, mw_stats] = ranksum(Experiments(1).Post_Stim_Df,Experiments(2).Post_Stim_Df)
+end
+%disp(['P-Value:']); 
+%%
+figure; hold on 
+bar([Condition_1_mean,Condition_2_mean])
+errorbar([Condition_1_mean,Condition_2_mean],[Condition_1_std,Condition_2_std],'.','Color','k')
+ylabel('Mean post-stimulus DF/F') 
+xlim([.5,2.5])
+ylim([-0.5, 3])
+xticks([1,2])
+xticklabels(Conditions)
+plot([1,2],[mean([2.5,max([Condition_1_mean+Condition_1_std,Condition_2_mean+Condition_2_std])]),mean([2.5,max([Condition_1_mean+Condition_1_std,Condition_2_mean+Condition_2_std])])],'k')
+if exist('pval_mw') == 1
+    if  pval_mw < .05
+        text(1.5,mean([2.5,max([Condition_1_mean+Condition_1_std,Condition_2_mean+Condition_2_std])]) + .1*mean([2.5,max([Condition_1_mean+Condition_1_std,Condition_2_mean+Condition_2_std])]), strcat('p=',num2str(pval_mw)))
+    else 
+        text(1.5,mean([2.5,max([Condition_1_mean+Condition_1_std,Condition_2_mean+Condition_2_std])]) + .1*mean([2.5,max([Condition_1_mean+Condition_1_std,Condition_2_mean+Condition_2_std])]), 'NS')
+    end
+elseif exist('pval_ttest') == 1
+        if pval_ttest < .05
+            text(1.5,mean([2.5,max([Condition_1_mean+Condition_1_std,Condition_2_mean+Condition_2_std])]) + .1*mean([2.5,max([Condition_1_mean+Condition_1_std,Condition_2_mean+Condition_2_std])]), strcat('p=',num2str(pval_ttest)))
+        else
+            text(1.5,mean([2.5,max([Condition_1_mean+Condition_1_std,Condition_2_mean+Condition_2_std])]) + .1*mean([2.5,max([Condition_1_mean+Condition_1_std,Condition_2_mean+Condition_2_std])]), 'NS')
+        end
+end
+set(gcf,'Color','w')
+set(findall(gcf,'-property','FontSize'),'FontSize',18);
+
+%%
+disp('Select output directory');
+saveas(gcf,strcat(uigetdir,'/',input('Figure_Name?'),'.svg'))
+
+
+
+%% Average Across Experiments
+clear all; close all
+number_of_experiments = input('How Many Animals?')
+
+for i = 1:number_of_experiments
+    [filename, pathname] = uigetfile('*Trace_Data.mat')
+    load(strcat(pathname,'/',filename));
+    experiment_name = strsplit(filename,'.');
+    experiment_name = experiment_name{1,1};
+    Experiments(i).Experiment_Name = experiment_name; clear filename and experiment_name and pathname
+    Experiments(i).Trace_Data = Trace_Data; clear Trace_Data 
+end
+
+%% 
+% Columns of trace data are each ROI, Rows are time points
+clear ps_df and mean_per_ROI_ps_df and post_df and ps_df_m and std_pre and std_post and mean_per_ROI_post_df
+for i = 1:number_of_experiments
+    ps_df{i} = Experiments(i).Trace_Data.pre_stim_df;
+    post_df{i} = Experiments(i).Trace_Data.post_stim_df;
+    ps_df_m{i} = Experiments(i).Trace_Data.pre_stim_mean;
+    post_df_m{i} = Experiments(i).Trace_Data.post_stim_mean;
+    std_pre{i} = Experiments(i).Trace_Data.std_pre;
+    std_post{i} = Experiments(i).Trace_Data.std_post;
+    mean_per_ROI_ps_df(:,i) = mean(ps_df{1,i},2);
+    mean_per_ROI_post_df(:,i) = mean(post_df{1,i},2);
+end
+
+time = Experiments(1).Trace_Data.time;
+stim_meta = Experiments(1).Trace_Data.stim_meta;
+fs = stim_meta.fs
+mean_all_animal_psdf = mean(mean_per_ROI_ps_df,2);
+mean_all_animal_postdf = mean(mean_per_ROI_post_df,2);
+pre_std_all_animal = std(mean_per_ROI_ps_df,[],2);
+post_std_all_animal = std(mean_per_ROI_post_df,[],2);
+
+figure;hold on
+shadedErrorBar([0:fs:time(size(mean_all_animal_psdf,1))],mean_all_animal_psdf,pre_std_all_animal,'lineProps',{'LineWidth',2,'Color','k'},'transparent',1)
+hold on
+rectangle('Position',[time(stim_meta.stim_index(1)), min(mean_all_animal_psdf)-max(pre_std_all_animal), stim_meta.stim_length, .05],'EdgeColor','r','FaceColor','r')
+shadedErrorBar(time(stim_meta.stim_index(1))+stim_meta.stim_length:fs:time(stim_meta.stim_index(1)+round(stim_meta.Repetitions*.3))+stim_meta.stim_length,mean_all_animal_postdf,post_std_all_animal,'lineProps',{'LineWidth',2,'Color','k'},'transparent',1)
+plot([time(stim_meta.stim_index(1)),time(stim_meta.stim_index(1))+stim_meta.stim_length],[mean_all_animal_psdf(length(mean_all_animal_psdf)),mean_all_animal_postdf(1)],'LineStyle','-.')
+%ylim([0 max(post_stim_mean(:)+2*std_post)])
+xlim([0 8])
+xlabel('Time (s)')
+ylabel('DF/F')
+set(gcf,'Color','w')
+set(findall(gcf,'-property','FontSize'),'FontSize',18);
+ylim([input('ymin?'),input('ymax?')])
+
+
+Post_stimulus_delta_f = mean(mean_per_ROI_post_df(1:4, :)); %take avg of first four frames post-stimulus from all columns. orgininally mean_per_ROI_post_df(1,:);
+
+e1 = strsplit(Experiments(1).Experiment_Name,'_');
+included_experiments = e1{1,1}; clear e1
+for i = 2:number_of_experiments
+    e1 = strsplit(Experiments(i).Experiment_Name,'_')
+    included_experiments = strcat(included_experiments,'_',e1{1,1}); clear e1
+end
+
+if input('Save Figure? yes:1 no:0') == 1
+    saveas(gcf,strcat(uigetdir,'/','Average_Traces_from ',included_experiments,'.svg'))
+else 
+end
+disp('Where to save variables?')
+clear path_name; [path_name] = uigetdir;
+save(strcat(path_name,'/','Average_Traces_Data_from',included_experiments)); 
+save(strcat(path_name,'/','Post_Stimulus_Df_from',included_experiments),'Post_stimulus_delta_f');
+
+
+%% Load Image Data
+% This code uses bf_formats to input .tif or .czi calcium imaging files.
+% It relies on a number of other sctips, which should be in the same file.
+% The workflow is as follows:  
+%   1:  Load a single experiment file.  This can be standard calcium
+%   imaging data, or with stimuli.  Importantly, this code was written to analyze
+%   calcium imaging data from a Zeiss LSM, and some stimulus related
+%   metadata is not read correctly from bioformats.  For this reason, you
+%   will need to fix the load_image_data.m and get_photostim_info.m files if you want to use file
+%   formats that have metadata structures that difer from a .czi.  
+%   2:  Rotate and crop image data.  This will cutdown on runtime if you
+%   only want to analyze part of your image file.  The crop is only xy.
+%   3: Rigid image registration.  This is fairly low level motion
+%   correction.
+%   4:  Make ROIs 
+%   5:  Extract traces from ROIs
+%   6:  Analyze Stimulus Data
+%   7:  Basic trace analysis
+%   8:  Save output files
+
+close all; clear all
+if input('Stimulus Data? 1:Yes 0:No  :') == 1
+    [image_data,meta_data,f_name,stim_meta] = load_image_data(1);
+else
+    [image_data,meta_data,f_name] = load_image_data(0);
+end
+experiment_name = strsplit(f_name,'.');
+experiment_name = experiment_name{1,1};
+if input('Save Figs? Yes:1  :') == 1
+    fprintf('Choose Output Directory for Figures');
+    psfile = strcat(uigetdir,'/',experiment_name,'.ps')
+    if exist(psfile,'file')==2;delete(psfile);end
+end
+fprintf('Select Output Directory for Data');
+mat_file_outpur_dir = uigetdir
+clear f_name
+%% Roatate and Crop
+[rotated] = rotate_and_crop(image_data); clear image_data
+close all
+%% Register with Rigid
+[registered] = register_image(rotated); clear rotated
+
+
+
+%% Lineage Bleach Correct 
+% not sure if this works yet.
+
+%[detrended,time] = linear_bleach_correct(reg_crop,meta_data); %clear reg_crop
+
+
+%% Make ROIs
+if exist('psfile','var');
+[ROIs Image_ROIs] = make_ROIs_v2(registered,psfile)
+else
+[ROIs Image_ROIs] = make_ROIs_v2(registered)  
+end
+%% Get Traces
+time = [0:1:size(registered,3)-1]*double(meta_data.getPixelsTimeIncrement(0).value)
+for i_chan = 1:size(Image_ROIs{1,1},4)
+    for i = 1:length(Image_ROIs)
+        for u = 1:size(Image_ROIs{1,1},3)
+            frame = Image_ROIs{i}(:,:,u,i_chan);
+            traces(u,i,i_chan) = mean(frame(:));
+             axis([0 60 -0.5 3])
+        %ylim([input('ymin?'),input('ymax?')])
+    end
+end
+end
+
+
+% if size(Image_ROIs{1,1},4) == 2
+%     plot(time,traces(:,:,1),'r'); hold on
+%     plot(time,traces(:,:,2),'g');
+%     title('Raw Traces')
+% else
+%     plot(time,traces(:,:,1),'r'); hold on
+%     title('Raw Traces')
+% end
+
+%% Calculate Stim-Locked averages
+calc_stim = input('Calculate Stimulus Average? 1:yes 0:no') == 1
+if calc_stim == 1
+    number_of_stimuli = 3;
+    stim_meta.stim_length = input('Stim Length?')
+    [Trace_Data] = plot_stim_averages(traces,time,stim_meta,number_of_stimuli);
+else
+end
+if exist('psfile','var'); set(gcf, 'PaperPositionMode', 'auto'); print('-dpsc',psfile,'-append'); end
+%% Analyze Traces
+% Columns of trace data are each ROI, Rows are time points
+if exist('psfile','var');
+    if meta_data.getChannelCount(0) == 2
+    
+        [df_1] = quick_gcamp(traces(:,:,1),time,1,psfile);
+        [df_2] = quick_gcamp(traces(:,:,2),time,2,psfile);
+    
+        figure; hold on
+        plot(time,df_1,'r'); 
+        plot(time,df_2,'g');
+        legend(['Channel 1';'Channel 2'])
+       
+    else
+        [df_1] = quick_gcamp(traces(:,:,1),time,1,psfile);
+    end
+else
+    if meta_data.getChannelCount(0) == 2
+    
+        [df_1] = quick_gcamp(traces(:,:,1),time,1);
+        [df_2] = quick_gcamp(traces(:,:,2),time,2);
+    
+        figure; hold on
+        plot(time,df_1,'r'); 
+        plot(time,df_2,'g');
+        legend(['Channel 1';'Channel 2'])
+    else
+        [df_1] = quick_gcamp(traces(:,:,1),time,1);
+    end    
+end
+%%  Save Data
+if exist('Trace_Data','var') == 1
+save(strcat(mat_file_outpur_dir,'/',experiment_name,'_Trace_Data.mat'),'Trace_Data')
+else
+end
+
+
+if exist('df_2','var') == 1 & calc_stim == 1
+save(strcat(mat_file_outpur_dir,'/',experiment_name,'_Variables.mat'),'registered','ROIs','stim_meta','traces','df_1','df_2')
+elseif exist('df_2','var') == 0 & calc_stim == 1
+save(strcat(mat_file_outpur_dir,'/',experiment_name,'_Variables.mat'),'registered','ROIs','stim_meta','traces','df_1')
+elseif exist('df_2','var') == 1 & calc_stim == 0
+save(strcat(mat_file_outpur_dir,'/',experiment_name,'_Variables.mat'),'registered','ROIs','traces','df_1','df_2')
+else
+save(strcat(mat_file_outpur_dir,'/',experiment_name,'_Variables.mat'),'registered','ROIs','traces','df_1')
+end
+
+% CSV_file = input('Save CSV? Yes:1 No:0')
+% if CSV_file == 1
+%     
+    
+
+
+function [df] = df_transform(time,neurons)
+%% Filtering
+neuronsF = sgolayfilt(neurons,3,5);  %% s. golay filter on intensity values
+
+%% Calculate DF/F with moving F0
+% To avoid substantial bleaching issues, we use a DF/F calculation that
+% employs a sliding F0.  The sliding frame length is 20% of the movie, and
+% we recalculate F0 using this sliding frame.  F0 is the mean of the lowest
+% 10% of values within a frame. 
+interval = round(.2*length(time));
+clear f0 and sorted and df
+for u = 1:size(neuronsF,2)
+    for i = 1:length(time)-interval
+    sorted(:,u) = sort(neuronsF(i:i+interval,u));
+    f0(i,u) = mean(sorted(round(.1*interval),u));
+    df(i:i+interval,u) = (neuronsF(i:i+interval,u)-f0(i,u))/f0(i,u);
+    end
+end
+% figure
+% for i = 1:size(neuronsF,2)
+%     subplot(round(size(neurons,2)/2),2,i)
+%     plot(time,df(:,i));
+% end
+% 
+% figure
+% plot(time,neuronsF)
+% figure
+% plot(time,df(:,1:3))
+end
+
+
+
+function [Stim_meta] = get_photostim_info(metadata)
+
+Stim_meta.Start_Index = str2num(metadata.get('Global Experiment|AcquisitionBlock|BleachingSetup|StartIndex #2'));
+Stim_meta.Iterations = str2num(metadata.get('Global Experiment|AcquisitionBlock|BleachingSetup|Iterations #2'));
+Stim_meta.Repetitions = str2num(metadata.get('Global Experiment|AcquisitionBlock|BleachingSetup|Repetition #2'));
+end
+
+
+
+
+function [image_series_mat_c,Meta_data,fname,stim_meta] = load_image_data(stim)
+% Load a czi or tif file.  Theoretically this should work for more than
+% just CZI and Tif files because it uses bioformats which can read lots of
+% formats. I only tested this with CZI and Tif files.  The stimulus locked
+% experiments only work with CZI files because the way to extract the
+% bleach metadata is microscope specific.
+    file_type = input('Tiff: 1 / CZI: 2') % pick a file type
+    if file_type == 1
+        ft = '*.tif'
+    else
+        ft = '*.czi'
+    end
+    [fname,pathname] = uigetfile(ft); % get file
+    image_data = bfopen(strcat(pathname,fname)); %uses bfopen to load the image data into the bioformats cell array
+    for i = 1:size(image_data{1,1},1)
+    image_series_mat(:,:,i) = image_data{1,1}{i,1}; % extracts the image frames from the bf cell array
+    end
+    Meta_data = image_data{1,4} % get the OMEXML metadata
+    
+    omd = image_data{1, 2}; % get the raw metadata (microscope specific)
+    if file_type == 2 & stim == 1
+        if str2num(omd.get('Global Experiment|AcquisitionBlock|BleachingSetup|Repetition #2'))>0; %check to see if bleaching was used
+           [stim_meta] = get_photostim_info(omd) % if so, get the photostim meta
+           stim_meta.fs = double(Meta_data.getPixelsTimeIncrement(0).value)
+           time = [0:1:size(image_series_mat,3)-1]*stim_meta.fs;
+           stim_meta.first_stim = stim_meta.fs*stim_meta.Start_Index;
+           stim_meta.stim_length = stim_meta.fs*stim_meta.Iterations;
+           stim_meta.stim_index = [stim_meta.Start_Index:stim_meta.Repetitions:size(image_series_mat,3)];
+        else
+            stim_meta = []
+        end
+    else 
+    end
+    if  Meta_data.getChannelCount(0) == 2 % get channel number, if its 2, make two channels.
+          image_series_mat_c(:,:,:,1) = image_series_mat(:,:,1:2:size(image_series_mat,3));
+          image_series_mat_c(:,:,:,2) = image_series_mat(:,:,2:2:size(image_series_mat,3));
+    else 
+          image_series_mat_c(:,:,:,1) = image_series_mat(:,:,:);
+    end
+    
+end
+function [ROIs Image_ROIs] = make_ROIs_v2(image,psfile)
+% Make square ROIs around a selected center point.  This does not yet work
+% with 2 color images.
+
+if size(image,4) == 2
+    mean_one = mean(image(:,:,:,1),3);
+    mean_two = mean(image(:,:,:,2),3);
+    imshowpair(mean_one,mean_two)
+else 
+    mean_new = max(image(:,:,:,1),[],3);
+    imagesc(mean_new); colormap gray
+end
+        
+if exist('psfile','var'); set(gcf, 'PaperPositionMode', 'auto'); print('-dpsc',psfile,'-append'); end
+
+if size(image,4) == 2
+    disp('Get Channel 1 ROIs')
+    disp('Press Enter when done')
+    [x_c1,y_c1] = getpts
+    disp('Get Channel 2 ROIs')
+    disp('Press Enter when done')
+    [x_c2,y_c2] = getpts
+else
+    disp('Select ROI centers')
+    disp('Press Enter when done')
+    [xi,yi] = getpts
+    hold on;
+    for n_roi = 1:size(xi,1)
+        ROIs(n_roi,:) = [xi(n_roi)-5,yi(n_roi)-30,10,60]
+        rectangle('Position',ROIs(n_roi,:),'EdgeColor','r','LineWidth',2)
+    end
+        
+end
+    
+
+for i_chan = 1:size(image,4);
+    for i = 1:size(xi,1)
+        for u = 1:size(image,3)
+            Image_ROIs{i}(:,:,u,i_chan) = imcrop(image(:,:,u,i_chan),ROIs(i,:));
+        end
+    end
+end
+
+
+end 
+   
+
+
+function [Trace_Data] = plot_stim_averages(traces,time,stim_meta,number_of_stimuli)
+% Make average stimulus response traces.  This script is designed for imaging applications that are not simultaneous excitation/recording.  Pre-stimulus period is equivalent
+% to the number of frames before the first stimulus.  Subsequent
+% pre-stimulus periods are the same number of frames before each subsequent
+% stimulus.  DF/F0 Calculations are done by using the mean pre-stimulus period
+% for each stimulus.
+
+fs = stim_meta.fs %% Frame Rate
+clear pre_stim_recording and post_stim_recording
+figure('rend','painters','pos',[10 10 450 900])
+for u_traces = 1:size(traces,2)
+    
+for i = 1:number_of_stimuli
+    pre_stim_recording(:,i) = traces(stim_meta.stim_index(i)-2:stim_meta.stim_index(i),u_traces); % Calculate pre-stimulus traces
+    post_stim_recording(:,i) = traces(stim_meta.stim_index(i)+1:stim_meta.stim_index(i)+1+round(stim_meta.Repetitions*.3),u_traces); % Calculate post-stimulus traces
+end
+f_min = mean(pre_stim_recording); % F_min for DF/F calculations
+
+pre_stim_df = (pre_stim_recording-f_min)./f_min; 
+post_stim_df = (post_stim_recording-f_min)./f_min;
+
+pre_stim_mean = mean(pre_stim_df,2);
+post_stim_mean = mean(post_stim_df,2);
+
+std_pre = std(pre_stim_df,[],2);
+std_post = std(post_stim_df,[],2);
+
+Trace_Data(u_traces).pre_stim_df = pre_stim_df;
+Trace_Data(u_traces).post_stim_df = post_stim_df;
+Trace_Data(u_traces).pre_stim_mean = pre_stim_mean;
+Trace_Data(u_traces).post_stim_mean = post_stim_mean;
+Trace_Data(u_traces).std_pre = std_pre;
+Trace_Data(u_traces).std_post = std_post;
+Trace_Data(u_traces).time = time;
+Trace_Data(u_traces).stim_meta = stim_meta;
+Trace_Data(u_traces).raw_traces = traces;
+
+subplot(size(traces,2),1,u_traces);hold on
+shadedErrorBar([0:fs:time(size(pre_stim_recording,1))],pre_stim_mean,std_pre,'lineProps',{'LineWidth',2,'Color','k'},'transparent',1)
+hold on
+rectangle('Position',[time(stim_meta.stim_index(1)), min(pre_stim_mean)-max(std_pre), stim_meta.stim_length, .05],'EdgeColor','r','FaceColor','r')
+shadedErrorBar(time(stim_meta.stim_index(1))+stim_meta.stim_length:fs:time(stim_meta.stim_index(1)+round(stim_meta.Repetitions*.3))+stim_meta.stim_length,post_stim_mean,std_post,'lineProps',{'LineWidth',2,'Color','k'},'transparent',1)
+plot([time(stim_meta.stim_index(1)),time(stim_meta.stim_index(1))+stim_meta.stim_length],[pre_stim_mean(length(pre_stim_mean)),post_stim_mean(1)],'LineStyle','-.')
+
+%ylim([0 max(post_stim_mean(:)+2*std_post)])
+xlabel('Time (s)')
+ylabel('DF/F')
+set(gcf,'Color','w')
+set(findall(gcf,'-property','FontSize'),'FontSize',18);
+title(strcat('ROI: ',sprintf('%1g',u_traces)))
+ylim([min(pre_stim_mean)-max(std_pre),max(post_stim_mean)+max(std_post)])
+
+end
+end
+%%
+
+
+
+
+function [df] = quick_gcamp(neurons,time,channel,psfile)
+%neuronsF = sgolayfilt(neurons,1,3);
+if channel == 1
+    c = 'r'
+    channel = 'Channel 1'
+else c = 'g'
+    channel = 'Channel 2'
+end
+%% Calculate DF/F
+df=ones(size(neurons));
+% for d = 1:size(neurons,2);
+%    df(:,d) = ((neuronsF(:,d)-min(neuronsF(1:length(time),d))))/(min(neuronsF(1:length(time),d)));
+% end
+
+df = df_transform(time,neurons)
+
+
+dt = input('Bleaching? 1:Yes 0:no')
+if dt == 1
+    detrended = detrend(df);
+else
+    detrended = df;
+end
+figure; subplot(2,1,1)
+plot(time,neurons); set(findall(gcf,'-property','FontSize'),'FontSize',18); set(gcf,'Color','w'); 
+xlabel('Time (s)')
+ylabel('Intensity (AU)')
+title([channel,' ', 'Raw Traces'])
+
+subplot(2,1,2)
+plot(time,detrended); set(findall(gcf,'-property','FontSize'),'FontSize',18); set(gcf,'Color','w'); 
+xlabel('Time (s)')
+ylabel('DF/F')
+title([channel,' ', 'DF/F Traces'])
+
+if exist('psfile','var'); set(gcf, 'PaperPositionMode', 'auto'); print('-dpsc',psfile,'-append'); end
+%% Plot all
+figure
+for d = 1:size(neurons,2); % raw traces
+hold on 
+subplot(1,size(neurons,2),d)
+plot(time,neurons(:,d),c);
+xlabel('Time (s)')
+ylabel('Intensity (AU)')
+title([channel,' ', 'Raw Traces'])
+set(findall(gcf,'-property','FontSize'),'FontSize',14); set(gcf,'Color','w');
+end
+if exist('psfile','var'); set(gcf, 'PaperPositionMode', 'auto'); print('-dpsc',psfile,'-append'); end
+figure    
+for d = 1:size(neurons,2); % df/f
+hold on 
+subplot(1,size(neurons,2),d)
+plot(time,detrended(:,d),c);
+xlabel('Time (s)')
+ylabel('DF/F')
+title([channel,' ', 'DF/F Traces'])
+set(findall(gcf,'-property','FontSize'),'FontSize',14); set(gcf,'Color','w');
+end
+if exist('psfile','var'); set(gcf, 'PaperPositionMode', 'auto'); print('-dpsc',psfile,'-append'); end
+% %% thresholding and find active neurons
+% sizes = (size(detrended,1)-1);
+% thresholded_neurons = zeros(size(detrended));
+% for i = 1:size(detrended,1);
+%     for u = 1:size(detrended,2);
+%         if detrended(i,u)>.48;
+%             thresholded_neurons(i,u) = detrended(i,u);
+%         else thresholded_neurons(i,u) = 0;
+%         end
+%     end
+% end
+% figure
+% imagesc(detrended',[0 1])
+% 
+% active_neuronidx = ones(1,size(detrended,2));
+% for i = 1:size(detrended,2);
+%     if sum(thresholded_neurons(:,i)) == 0;
+%         active_neuronidx(i) = 0;
+%     else active_neuronidx(i) = 1;
+%     end
+% end
+% active_neurons = thresholded_neurons(:,active_neuronidx==1);
+% 
+% fs = 5
+% [pxxM,fm] = periodogram(mean(active_neurons,2),[],[],fs);
+% colormap = parula;
+% co = colormap;
+% coo = co(1:5:(size(co,1)/2),:)
+% set(groot,'defaultAxesColorOrder',coo);
+% figure
+% [pxx,f] = periodogram(active_neurons,[],[],fs);
+% plot(f,pxx,'LineWidth',1)
+% hold on
+% plot(fm,pxxM,'r','LineWidth',2)
+% ax = gca;
+% ax.XLim = [0 3];
+% ax.YLim = [0 1];
+% xlabel('Frequency (Hz)')
+% ylabel('Magnitude')
+% title('Power Spectrum Analysis')
+
+%% 
+% dataCorr = corrcoef(detrended); figure
+% imagesc(dataCorr,[-1 1]); xlabel(''); ylabel(''); axis xy; colorbar; title('correlation matrix'); set(gcf,'Color','w')
+end
+
+
+
+function [reg] = register_image(image_series)
+% Register images with rigid movement correction.  This is pretty low level
+% image registration, but it works for stable ex-vivo preps. 
+[optimizer,metric] = imregconfig('monomodal');
+optimizer = registration.optimizer.OnePlusOneEvolutionary
+optimizer.InitialRadius = .0001;
+optimizer.Epsilon = 1.5e-8;
+optimizer.GrowthFactor = 3;
+optimizer.MaximumIterations = 100;
+
+registered = ones(size(image_series));
+for i_chan = 1:size(image_series,4)
+    
+    fixed = image_series(:,:,1,i_chan);
+    registered(:,:,1,i_chan) = fixed;
+    i = 2;
+    while i<=size(image_series,3)-1
+         registered(:,:,i,i_chan) = imregister(image_series(:,:,i,i_chan),image_series(:,:,i-1,i_chan),'similarity',optimizer,metric);
+         i = i+1;
+         disp(['Channel',' ',num2str(i_chan),': ',num2str((i/size(image_series,3))*100),'% Complete']); 
+    end
+end
+reg = registered(:,:,1:size(image_series,3)-1,:);
+end
+
+
+
+function [reg_crop, rect] = rotate_and_crop(image_series)
+ % This function will rotate an image and crop it down to the region of
+ % interest
+    imagesc(max(image_series(:,:,:,1),[],3)); % make a max projection to see if you want to rotate
+    deg = input('How many degrees to rotate?')
+    display('Select region to use for analysis.') 
+    rotated = imrotate(image_series,deg); 
+    mip = max(rotated(:,:,:,1),[],3); 
+    mip_fig = imagesc(mip) % draw an ROI rectangle to crop
+    rect = getrect;
+    for i_chan = 1:size(image_series,4);
+        for i = 1:size(rotated,3)
+            reg_crop(:,:,i,i_chan) = imcrop(rotated(:,:,i,i_chan),rect);
+        end
+    end
+end
+
+
+function varargout=shadedErrorBar(x,y,errBar,varargin)
+% generate continuous error bar area around a line plot
+%
+% function H=shadedErrorBar(x,y,errBar, ...)
+%
+% Purpose 
+% Makes a 2-d line plot with a pretty shaded error bar made
+% using patch. Error bar color is chosen automatically.
+%
+%
+% Inputs (required)
+% x - vector of x values [optional, can be left empty]
+% y - vector of y values or a matrix of n observations by m cases
+%     where m has length(x);
+% errBar - if a vector we draw symmetric errorbars. If it has a size
+%          of [2,length(x)] then we draw asymmetric error bars with
+%          row 1 being the upper bar and row 2 being the lower bar
+%          (with respect to y -- see demo). ** alternatively ** 
+%          errBar can be a cellArray of two function handles. The 
+%          first defines statistic the line should be and the second 
+%          defines the error bar.
+%
+% Inputs (optional, param/value pairs)
+% 'lineProps' - ['-k' by default] defines the properties of
+%             the data line. e.g.:    
+%             'or-', or {'-or','markerfacecolor',[1,0.2,0.2]}
+% 'transparent' - [true  by default] if true, the shaded error
+%               bar is made transparent. However, for a transparent
+%               vector image you will need to save as PDF, not EPS,
+%               and set the figure renderer to "painters". An EPS 
+%               will only be transparent if you set the renderer 
+%               to OpenGL, however this makes a raster image.
+% 'patchSaturation'- [0.2 by default] The saturation of the patch color.
+%
+%
+%
+% Outputs
+% H - a structure of handles to the generated plot objects.
+%
+%
+% Examples:
+% y=randn(30,80); 
+% x=1:size(y,2);
+%
+% 1)
+% shadedErrorBar(x,mean(y,1),std(y),'lineprops','g');
+%
+% 2)
+% shadedErrorBar(x,y,{@median,@std},'lineprops',{'r-o','markerfacecolor','r'});
+%
+% 3)
+% shadedErrorBar([],y,{@median,@(x) std(x)*1.96},'lineprops',{'r-o','markerfacecolor','k'});
+%
+% 4)
+% Overlay two transparent lines:
+% clf
+% y=randn(30,80)*10; 
+% x=(1:size(y,2))-40;
+% shadedErrorBar(x,y,{@mean,@std},'lineprops','-r','transparent',1);
+% hold on
+% y=ones(30,1)*x; y=y+0.06*y.^2+randn(size(y))*10;
+% shadedErrorBar(x,y,{@mean,@std},'lineprops','-b','transparent',1);
+% hold off
+%
+%
+% Rob Campbell - November 2009
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Parse input arguments
+narginchk(3,inf)
+
+params = inputParser;
+params.CaseSensitive = false;
+params.addParameter('lineProps', '-k', @(x) ischar(x) | iscell(x));
+params.addParameter('transparent', true, @(x) islogical(x) || x==0 || x==1);
+params.addParameter('patchSaturation', 0.2, @(x) isnumeric(x) && x>=0 && x<=1);
+
+params.parse(varargin{:});
+
+%Extract values from the inputParser
+lineProps =  params.Results.lineProps;
+transparent =  params.Results.transparent;
+patchSaturation = params.Results.patchSaturation;
+
+if ~iscell(lineProps), lineProps={lineProps}; end
+
+
+%Process y using function handles if needed to make the error bar dynamically
+if iscell(errBar) 
+    fun1=errBar{1};
+    fun2=errBar{2};
+    errBar=fun2(y);
+    y=fun1(y);
+else
+    y=y(:).';
+end
+
+if isempty(x)
+    x=1:length(y);
+else
+    x=x(:).';
+end
+
+
+%Make upper and lower error bars if only one was specified
+if length(errBar)==length(errBar(:))
+    errBar=repmat(errBar(:)',2,1);
+else
+    s=size(errBar);
+    f=find(s==2);
+    if isempty(f), error('errBar has the wrong size'), end
+    if f==2, errBar=errBar'; end
+end
+
+if length(x) ~= length(errBar)
+    error('length(x) must equal length(errBar)')
+end
+
+
+%Log the hold status so we don't change
+initialHoldStatus=ishold;
+if ~initialHoldStatus, hold on,  end
+
+H = makePlot(x,y,errBar,lineProps,transparent,patchSaturation);
+
+if ~initialHoldStatus, hold off, end
+
+if nargout==1
+    varargout{1}=H;
+end
+
+
+
+function H = makePlot(x,y,errBar,lineProps,transparent,patchSaturation)
+
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Plot to get the parameters of the line
+
+    H.mainLine=plot(x,y,lineProps{:});
+
+
+    % Work out the color of the shaded region and associated lines.
+    % Here we have the option of choosing alpha or a de-saturated
+    % solid colour for the patch surface.
+    mainLineColor=get(H.mainLine,'color');
+    edgeColor=mainLineColor+(1-mainLineColor)*0.55;
+
+    if transparent
+        faceAlpha=patchSaturation;
+        patchColor=mainLineColor;
+    else
+        faceAlpha=1;
+        patchColor=mainLineColor+(1-mainLineColor)*(1-patchSaturation);
+    end
+
+
+    %Calculate the error bars
+    uE=y+errBar(1,:);
+    lE=y-errBar(2,:);
+
+
+    %Add the patch error bar
+
+
+
+    %Make the patch
+    yP=[lE,fliplr(uE)];
+    xP=[x,fliplr(x)];
+
+    %remove nans otherwise patch won't work
+    xP(isnan(yP))=[];
+    yP(isnan(yP))=[];
+
+
+    if(isdatetime(x))
+        H.patch=patch(datenum(xP),yP,1);
+    else
+        H.patch=patch(xP,yP,1);
+    end
+
+    set(H.patch,'facecolor',patchColor, ...
+        'edgecolor','none', ...
+        'facealpha',faceAlpha)
+
+
+    %Make pretty edges around the patch. 
+    H.edge(1)=plot(x,lE,'-','color',edgeColor);
+    H.edge(2)=plot(x,uE,'-','color',edgeColor);
+
+
+
+    uistack(H.mainLine,'top') % Bring the main line to the top
+
+
+
+
