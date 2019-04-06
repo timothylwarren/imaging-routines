@@ -8,8 +8,10 @@ Emily C. Sales, Emily L. Heckman, Timothy L. Warren, and Chris Q. Doe
 
 Repository consists of Python scripts written by
 Timothy Warren, timlwarren AT gmail
-as well as R script (PairwiseWilcoxTest.R ) written by Emily Sales and Heckman
-and MATLAB Code by Brandon Mark  (supplemental_matlab_code.txt)
+
+Also R script (PairwiseWilcoxTest.R ) written by Emily Sales and Heckman
+
+MATLAB Code written by Brandon Mark  (supplemental_matlab_code.txt)
 
 Python scripts are to analyze data collected in Slidebook.
 
