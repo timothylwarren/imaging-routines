@@ -1,3 +1,4 @@
+#summary plots of unc5 mutants for elife submission
 import pdb
 from py_utilities import tw_filehandling as fh
 import matplotlib.pyplot as plt
@@ -19,30 +20,18 @@ gs=GridSpec(3,6,figure=fig)
 axraw={}
 axnorm={}
 
-#axraw['on']=fig.add_subplot(gs[0,0])
-#axraw['off']=fig.add_subplot(gs[0,1])
-
 axnorm=fig.add_subplot(gs[0:2,0:3])
 axsum=fig.add_subplot(gs[0:2,4])
 depth_for_analysis={}
 depth_for_analysis['on']=0
 depth_for_analysis['off']=-20
-#axnorm['off']=fig.add_subplot(gs[1,1])
 
 def main():
     mn_by_animal={}
     for file_ind,crfile in enumerate(summary_data_files_to_load):
         dt=fh.open_pickle(summary_data_location+crfile)
-        #pdb.set_trace()
         delta_f=dt['delta_f']
 
-        ##raw plot
-        #for target_key in delta_f.keys():
-         #   for depth_key in delta_f[target_key].keys():
-          #      num_vls=len(delta_f[target_key][depth_key])
-           #     axraw[target_key].plot(depth_key*np.ones(num_vls),delta_f[target_key][depth_key],'o',color=colors[file_ind])
-
-        ##normalized_plot
         fvls_array={}
         
         for target_key in ['on','off']:
@@ -54,16 +43,13 @@ def main():
             fvls_sum['norm']=[]
             fvls_array[target_key]={}
             for expind,exp_key in enumerate(delta_f.keys()):
-                #in this file there is an erroneous extra depth in one of the runs
-                #if crfile == 'wt_animal3.pck':
+                
                 try:
                     fvls_to_add=delta_f[exp_key][target_key]['fvl']
                 except:
                     fvls_to_add=delta_f[exp_key][target_key]['fvl_raw']
                 norm_fvls_to_add=fvls_to_add/dt['max_value'][exp_key]
-                #else:
-                 #   fvls_to_add=delta_f[exp_key][target_key]['fvl']
-                  #  norm_fvls_to_add=fvls_to_add/dt['max_value'][exp_key]
+               
 
                 fvls_sum['norm'].append(norm_fvls_to_add)
                 if expind>0:
@@ -94,8 +80,6 @@ def main():
             
            
             norm_flag=False
-            #round=True
-            
             
             plt_util.plot_raw(axnorm,fvls_array,norm_flag,line_flag=True)
         fpl.adjust_spines(axnorm,['left','bottom'])
@@ -109,10 +93,9 @@ def calc_mean_for_animal_over_depth_range(fin,target_key):
     
     crdepth=depth_for_analysis[target_key]
     inds=np.where((depth==crdepth))[0]
-    try:
-        return np.mean(fin['fvl_raw'])
-    except:
-        pdb.set_trace()
+    
+    return np.mean(fin['fvl_raw'])
+    
     
 def plot_sum_for_each_animal(axsum,mn_by_animal):
     kcol=ml.colors.colorConverter.to_rgba('k', alpha=.5)
@@ -136,15 +119,10 @@ def plot_sum_for_each_animal(axsum,mn_by_animal):
     axsum.set_yticks([-.25,0,.25,.5,.75])
     axsum.set_xlim(-.2,1.2)
     fpl.adjust_spines(axsum,['left'])
-    #pdb.set_trace()
     axsum.set_ylim(-.25,1.25)
     axsum.set_aspect(4)
     axsum.set_yticks([-.25,0,.25,.5,.75,1.0,1.25])
     axsum.set_xlim(-.2,1.2)
-
-
-
-    
 
 
 
@@ -154,6 +132,4 @@ def myround(x, base=10):
 if __name__== "__main__":
   main()
    
-                #for crind in np.arange(len(delta_f[target_key][depth_key])):
-                #axnorm[target_key].plot(depth_key,delta_f[target_key][depth_key]/dt['max_value'][crind],'o',color=colors[file_ind])
-
+            
