@@ -1,7 +1,9 @@
 # elife_larvae_2019
 Code associated with Elife Submission 2019:
+
 Regulation of subcellular dendritic synapse specificity by axon guidance cues
-Emily C. Sales, Emily L. Heckman, Timothy L. Warren, and Chris Q. Doe* 
+Emily C. Sales, Emily L. Heckman, Timothy L. Warren, and Chris Q. Doe
+
 
 Repository consists of Python scripts written by
 Timothy Warren, timlwarren AT gmail
