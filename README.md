@@ -5,19 +5,14 @@ Emily C. Sales, Emily L. Heckman, Timothy L. Warren, and Chris Q. Doe*
 
 Repository consists of Python scripts written by
 Timothy Warren, timlwarren AT gmail
+as well as R script (PairwiseWilcoxTest.R ) written by Emily Sales and Heckman
+and MATLAB Code by Brandon Mark  (supplemental_matlab_code.txt)
 
-Also:
-(1)  PairwiseWilcoxTest.R 
-written by Emily Sales 
-
-(2) supplemental_matlab_code.txt
-MATLAB code written by Brandon Mark
-
-Python scripts to analyze data collected in Slidebook.
+Python scripts are to analyze data collected in Slidebook.
 
 Workflow is to 
 (1) Read in raw data from tif files and manually select ROIs.
-**plot_roi_time_course_2.py**
+**make_roi.py**
 
 This saves a .pck file with data associated from the experiment.
 
