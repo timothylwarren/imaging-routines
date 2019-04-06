@@ -1,3 +1,5 @@
+#file_utilities.py
+#series of functions useful for manipulating slidebook files
 
 import skimage.io
 import xmltodict
@@ -11,7 +13,6 @@ def read_in_tif(filename):
     return im
 
 def read_in_tif_and_get_metadata(filename):
-#this needs to be set to be location of your tif file.
     time_between_frames=.12642225
     im={}
     stim={}
@@ -24,9 +25,6 @@ def read_in_tif_and_get_metadata(filename):
     return(im,stim)
 
 
-	#redataata_path= '/Users/tim/data/2pdata/exported_tifs/'
-	#file_name= 'Streaming Phasor Capture - 1_XY0_Z0_T000_C0.tif'
-
 def make_edges(xvls,yvls,imzoom):
     zero_im=np.zeros(np.shape(imzoom))
     
@@ -35,18 +33,11 @@ def make_edges(xvls,yvls,imzoom):
     return edges
 
 
-
-def edge_detector(im):
-    
+def edge_detector(im): 
     from skimage import feature
- 
-    #im = io.imread('boat.png')
     edges = feature.canny(im)
     return (edges)
-    #skimage.io.imshow(edges)
-    #io.show()
-
-
+    
 def get_time_stamps(filename):
     time_stamps=[]
     image_frame_nums=[]
@@ -68,9 +59,6 @@ def get_time_stamps(filename):
             stim_times.append(crstim['Union']['Shape']['@theT'])
 
         return (time_stamps,image_frame_nums,stim_times)
-
-
-
 
 
 def get_stim_depths(logfilein):
@@ -126,11 +114,6 @@ def get_delta_f(mn_roi,stim_frames,preframes,postframes,pre_frame_buffer=0):
     
     for cr_roi_ind in np.arange(len(mn_roi)):
         for crframe in sorted_frames:
-            #prewindow=[crtm-PREF_WINDOW[0],crtm-PREF_WINDOW[1]]
-            #pstwindow=[crtm+POSTF_WINDOW[0],crtm+POSTF_WINDOW[1]]
-            
-            #preframe_inds=np.intersect1d(np.where(frame_tms>=prewindow[0]),np.where(frame_tms<=prewindow[1]))
-            #postframe_inds=np.intersect1d(np.where(frame_tms>=pstwindow[0]),np.where(frame_tms<=pstwindow[1]))
            
             st['pre_f'][cr_roi_ind].append(np.mean(np.array(mn_roi[cr_roi_ind])[crframe-preframes-pre_frame_buffer:crframe-pre_frame_buffer]))
             
@@ -166,8 +149,6 @@ def get_stim_region(logfilein,unique_events=1):
                     xpixels=[]
                     ypixels=[]
 
-
-
             if roi_collect_flag:
                 initflag=False
                 vls=pieces[0].split(',')
@@ -184,8 +165,7 @@ def get_stim_region(logfilein,unique_events=1):
                     
                     roi_collect_flag=True
     log_file.close()
-    #im['xpixels']=xpixels
-    #im['ypixels']=ypixels
+    
     xlist.append(xpixels)
     ylist.append(ypixels)
     
@@ -194,17 +174,9 @@ def get_stim_region(logfilein,unique_events=1):
     yreturn_list=[]
 
     for cr_event in np.arange(unique_events):
-        
-
-
         xreturn_list.append([int(i) for i in xlist[cr_event]])
         yreturn_list.append([int(i) for i in ylist[cr_event]])
     
     return (xreturn_list,yreturn_list)
           
-
-           
-
-
-
 
