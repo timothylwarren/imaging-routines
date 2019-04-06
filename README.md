@@ -4,22 +4,19 @@ Code associated with Elife Submission 2019:
 **Regulation of subcellular dendritic synapse specificity by axon guidance cues**
 Emily C. Sales, Emily L. Heckman, Timothy L. Warren, and Chris Q. Doe
 
+
 Repository consists of 
 
 (1) Python scripts written by
 Timothy Warren, timlwarren AT gmail
-
 (2) R script **PairwiseWilcoxTest.R** written by Emily Sales and Heckman
-
 (3) MATLAB Code written by Brandon Mark  **supplemental_matlab_code.txt**
 
 
 Python scripts are to analyze data collected in Slidebook.
-
 Workflow is to 
 (1) Read in raw data from tif files and manually select ROIs.
 **make_roi.py**
-
 This saves a .pck file with data associated from the experiment.
 
 (2) Make plots of data for different ROIs
