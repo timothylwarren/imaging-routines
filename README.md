@@ -5,12 +5,14 @@ Code associated with Elife Submission 2019:
 Emily C. Sales, Emily L. Heckman, Timothy L. Warren, and Chris Q. Doe
 
 Repository consists of 
+
 (1) Python scripts written by
 Timothy Warren, timlwarren AT gmail
 
 (2) R script **PairwiseWilcoxTest.R** written by Emily Sales and Heckman
 
 (3) MATLAB Code written by Brandon Mark  **supplemental_matlab_code.txt**
+
 
 Python scripts are to analyze data collected in Slidebook.
 
