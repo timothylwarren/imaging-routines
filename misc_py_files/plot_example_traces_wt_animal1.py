@@ -1,3 +1,4 @@
+#example traces in elife submission
 
 import pdb
 from py_utilities import tw_filehandling as fh
@@ -61,22 +62,14 @@ def make_traces():
             crax=ax[key][crind]
 
             st_time=stim_time_in_sec[key][crind]
-            #78th frame, zeroi indexed
             
             st_frame=int(np.ceil(st_time/TIME_BETWEEN_FRAMES)-1)
             modvl=np.mod(st_time/TIME_BETWEEN_FRAMES,np.floor(st_time/TIME_BETWEEN_FRAMES))
-            #pre_time_in_frames=32, x=0:31 pre...
             crax.plot(np.arange(pre_time_in_frames),dt['mn_roi'][roi_ind][st_frame-pre_time_in_frames:st_frame],color=col,linewidth=0.5)
             stim_duration_in_frames=stim_duration/TIME_BETWEEN_FRAMES
-
-            #crax.plot(np.arange(2)+pre_time_in_frames-1,dt['mn_roi'][roi_ind][st_frame-1:st_frame+1])
-            pdb.set_trace()
             st_time_in_frames=pre_time_in_frames-1+modvl
             crax.plot([st_time_in_frames,st_time_in_frames+stim_duration_in_frames],[700,700],color='c',linewidth=2)
-
-
-            
-            
+          
             pre_f=dt['deltaf_vls']['pre_f'][roi_ind][stim_ind[key]]
             pst_f=dt['deltaf_vls']['pst_f'][roi_ind][stim_ind[key]]
             crax.plot(39,pre_f,'<')
@@ -91,7 +84,6 @@ def make_traces():
                     crax.plot([10,10+1/TIME_BETWEEN_FRAMES],[350,350],'k')
 
 
-
 def make_image():
     fig=plt.figure(figsize=(1,2))
     ax=fig.add_subplot(111)
@@ -99,10 +91,7 @@ def make_image():
     crfile=files_to_plot[0]
     dt=fh.open_pickle(data_path+crfile+'.pck')
     ax.imshow(dt['im_mean'],origin='lower')
-    #fpl.adjust_spines(ax,[])
-        
-        #for axind,crax in enumerate([ax1,ax2,ax3]):
-            
+                
     plt.sca(ax)
            
     cr_roi=dt['roi'][roi_ind]
@@ -112,8 +101,7 @@ def make_image():
     ax.set_xlim(20,90)
     ten_microns_in_pixels=10/microns_per_pixel
     plt.plot([30,30+ten_microns_in_pixels],[20,20],'r')
-    #ax.imshow(dt['stim_mask'][0],cmap='Greens',alpha=0.5,origin='lower')
-    #ax.imshow(dt['stim_mask'][1],cmap='Reds',alpha=0.5,origin='lower')
+   
     cr_center=on_target_centers[0]
     circ=plt.Circle((cr_center[0],cr_center[1]),radius=5/microns_per_pixel,edgecolor='k',facecolor='None')
     ax.add_patch(circ)

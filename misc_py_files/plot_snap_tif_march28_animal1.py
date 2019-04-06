@@ -6,11 +6,7 @@ from matplotlib.gridspec import GridSpec
 from py_utilities import fp_library2 as fpl
 import file_utilities as util
 import matplotlib as mpl
-###
-#now plot the means over time in the region of interest
-####
 
-#here I don't plot 10th-13th frame b/c that's when stimulation occurs.
 data_path= '/Volumes/LaCie/2pdata/march28/wt/animal1/'
 
 #file_names= ['2x 10 micron diam z-stack0space seperation _XY1553116043_Z000_T0_C0.tif']
@@ -36,11 +32,9 @@ for crind in np.arange(len(file_names)):
     dt=util.read_in_tif(data_path+file_names[crind])
     savedt=fh.open_pickle(data_path+pck_name)
     stim_region=savedt['stim_region']
-    #dt=fh.open_pickle(data_path+file_names[crind]+'.pck')
     pdb.set_trace()
     plt.set_cmap('hot')
     imobj=ax[crind].imshow(dt['tifstack'])
-    #imobj.set_clim(200,2000)
     ax[crind].set_xlim(140,240)
     ax[crind].set_ylim(125,240)
     if crind==0:
@@ -49,7 +43,6 @@ for crind in np.arange(len(file_names)):
         imobj.set_clim(200,500)
     imobj=ax[crind+2].imshow(dt['tifstack'])
     imobj.set_clim(100,900)
-    #imobj.set_clim(200,2000)
     ax[crind+2].set_xlim(130,250)
     ax[crind+2].set_ylim(130,250)
 
@@ -60,7 +53,6 @@ for crind in np.arange(len(file_names)):
     y[yvls,xvls]=1
     y=np.ma.masked_where(y==0,y)
     
-    ax[crind].imshow(y,cmap='Reds',alpha=0.7,interpolation='nearest')
     if crind==0:
         ax[crind].plot([160,160+10/microns_per_pixel],[150,150],'r')
         cr_center=on_target_centers[0]
@@ -83,46 +75,8 @@ for crind in np.arange(len(file_names)):
     y=np.zeros(np.shape(dt['tifstack']))
     y[yvls,xvls]=1
     y=np.ma.masked_where(y==0,y)
-    #ax[crind].set_xlim(0,300)
-    #ax[crind].set_ylim(0,300)
+    
     ax[crind].plot([200,200+10/microns_per_pixel],[170,170],'c')
     fpl.adjust_spines(ax[crind],[])
-    #fpl.adjust_spines(ax[crind],[])
     
-    ax[crind].imshow(y,cmap='Reds',alpha=0.7,interpolation='nearest')
-    #fpl.adjust_spines(ax[crind],'')
     
-    #xvls=np.array(stim_region['xlist'][1])
-    #yvls=np.array(stim_region['ylist'][1])
-    #zero_im[yvls,xvls]=1
-    #ax[crind].imshow(zero_im,alpha=0.5)
-
-    #imshowobj=ax.imshow(mean_xy)
-    #imshowobj.set_clim(20,45)
-    #ax.set_xlim(925,1050)
-    #ax.set_ylim(660,785)
-    #imshowobj2=ax2.imshow(mean_z)
-    #imshowobj2.set_clim(14.6,16.5)
-    #ax2.set_xlim(925,1050)
-    #ax2.plot([940,940+10/microns_per_pixel],[20,20],'r')
-
-
-    #stim_len=0.1
-    #ax=fig.add_subplot(6,1,crind+1)
-    #ax.plot(dt['mn_roi'][0],'k')
-    #ax.plot(dt['mn_roi'][1],'r')
-    #ax.text(0,50,file_names[crind].split('stack')[1],fontsize=5)
-    #if crind<5:
-     #   fpl.adjust_spines(ax,['left'])
-    #else:
-     #   fpl.adjust_spines(ax,['bottom','left'])
-    #plt.xlim(0,100)
-
-
-
-###
-#now plot the means over time in the region of interest
-####
-
-#here I don't plot 10th-13th frame b/c that's when stimulation occurs.
-
