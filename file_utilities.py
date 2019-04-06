@@ -13,7 +13,7 @@ def read_in_tif(filename):
     return im
 
 def read_in_tif_and_get_metadata(filename):
-    time_between_frames=.12642225
+    time_between_frames=.12625
     im={}
     stim={}
     im['tifstack']=skimage.io.imread(filename)

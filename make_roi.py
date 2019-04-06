@@ -26,7 +26,7 @@ USE_PREVIOUS_ROI=True
 #if USE_META_DT is true, then tif files to analyze are set in meta_dt_file
 USE_META_DT_FILE=True
 UNIQUE_STIM_EVENTS=2
-TIME_BETWEEN_FRAMES=.12642225
+TIME_BETWEEN_FRAMES=.12625
 PREVIOUS_ROI_FILE='---Streaming Phasor Capture - 8_XY0_Z0_T0000_C0.tif'
 #specific to configuration
 data_path= '/Volumes/LaCie/tstdir/'
