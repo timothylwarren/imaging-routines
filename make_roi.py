@@ -24,16 +24,16 @@ PLOT_STIM_REGION=False
 USE_PREVIOUS_ROI=True
 
 #if USE_META_DT is true, then tif files to analyze are set in meta_dt_file
-USE_META_DT_FILE=True
+USE_META_DT_FILE=False
 UNIQUE_STIM_EVENTS=2
 TIME_BETWEEN_FRAMES=.12625
-PREVIOUS_ROI_FILE='---Streaming Phasor Capture - 8_XY0_Z0_T0000_C0.tif'
+PREVIOUS_ROI_FILE='Streaming Phasor Capture - 1_XY0_Z0_T000_C0.tif'
 #specific to configuration
-data_path= '/Volumes/LaCie/tstdir/'
+data_path= '/users/tim/data/2ptmp/may20/'
 meta_dt_file='anim5_plotdata.pck'
 stim_meta_dir='photomanipulation_data/'
 #file_names= ['---Streaming Phasor Capture - 1_XY0_Z0_T000_C0.tif']
-file_names=['---Streaming Phasor Capture - 8_XY0_Z0_T0000_C0.tif']
+file_names=['Streaming Phasor Capture - 3_XY0_Z0_T000_C0.tif']
 preframes=20
 postframes=5
 stim_region={}
@@ -72,6 +72,7 @@ for file_name in file_names:
     else:
         print('using previous ROI')
         sumdt=fh.open_pickle(data_path+PREVIOUS_ROI_FILE + '.pck')
+        pdb.set_trace()
         xvls=sumdt['zoom_vls']['xvls']
         yvls=sumdt['zoom_vls']['yvls']
     plt.xlim(xvls)

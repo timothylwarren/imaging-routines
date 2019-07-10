@@ -12,8 +12,8 @@ matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42
 matplotlib.rcParams["font.family"] = "Arial"
 matplotlib.rcParams["font.size"] = 7 
-data_path='/Volumes/LaCie/2pdata/march27_unc-5/animal3/'
-files_to_plot=['---Streaming Phasor Capture - 2_XY0_Z0_T000_C0.tif']
+data_path='/users/tim/data/2ptmp/'
+files_to_plot=['Streaming Phasor Capture - 1_XY0_Z0_T000_C0.tif']
 
 stim_time_in_sec={}
 stim_time_in_sec['on']=[9.95,9.95]

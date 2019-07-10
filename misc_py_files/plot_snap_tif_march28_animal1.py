@@ -7,7 +7,7 @@ from py_utilities import fp_library2 as fpl
 import file_utilities as util
 import matplotlib as mpl
 
-data_path= '/Volumes/LaCie/2pdata/march28/wt/animal1/'
+data_path= '/Volumes/LaCie/2pdata_elife/march28/wt/animal1/'
 
 #file_names= ['2x 10 micron diam z-stack0space seperation _XY1553116043_Z000_T0_C0.tif']
 #'2x 10 micron diam z-stack4space seperation _XY1553116200_Z000_T0_C0.tif','2x 10 micron diam z-stack8space seperation _XY1553116392_Z000_T0_C0.tif',
