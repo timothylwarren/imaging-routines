@@ -1,34 +1,18 @@
-# elife_larvae_2019
-Code associated with Elife Submission 2019:
+#imaging routines
+Python 3.7x
 
-**Regulation of subcellular dendritic synapse specificity by axon guidance cues**
-Emily C. Sales, Emily L. Heckman, Timothy L. Warren, and Chris Q. Doe
-
-
-Repository consists of 
+Rebuilding this repository from other repo in Elife paper.
 
 (1) Python scripts written by
 Timothy Warren, timlwarren AT gmail
-(2) R script **PairwiseWilcoxTest.R** written by Emily Sales and Heckman
-(3) MATLAB Code written by Brandon Mark  **supplemental_matlab_code.txt**
 
 
-Python scripts are to analyze data collected in Slidebook.
-Workflow is to 
-(1) Read in raw data from tif files and manually select ROIs.
-**make_roi.py**
-This saves a .pck file with data associated from the experiment.
+For analysis of imaging without stimulation, 
+**make_roi_example.py** allows user to choose multiple ROIs (relying on rolypoly)
 
-(2) Make plots of data for different ROIs
-**misc_py_files/just_plotting.py**
+Then **plot_example_trace.py** plots time traces from those ROIs.
 
-(3) Example traces from Paper in
-**misc_py_files/plot_example_traces_unc5_animal3.py**
-**misc_py_files/plot_example_traces_wt_animal1.py**
 
-(4) Summary data in
-**summary_py_files/summary_plot_unc5.py**
-**sumarray_py_files/summary_plot.py**
 
 
 
