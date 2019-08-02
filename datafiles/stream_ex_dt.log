@@ -1,0 +1,10 @@
+Export Date-Time: 03/27/2019 17:14:57
+Capture Date-Time: 3/27/2019 11:03:36
+Z Planes: 1
+Time Points: 200
+Channels: 1
+Microns Per Pixel: 1.47441
+Z Step Size Microns: 0
+Average Timelapse Interval: 124.91 ms (8.0 Hz) (+/- 12.7 ms)
+IFD	X Position (um)	Y Position (um)	Z Position (um)	Elapsed Time (ms)	Channel Name	TIFF File Name
+0	0	0	0	0	PMT 2	---Streaming Phasor Capture - 1 - 2_XY0_Z0_T000_C0.tif
