@@ -1,16 +1,8 @@
-
-##make_roi_example.py 
-##Used to create rois and extract fluorescene data from slidebook files
+##
+##make_roi.py 
+##
+##Used to create rois and extract fluorescene daa from slidebook files
 ##Python 3.7
-
-#this script can apply a previously established ROI to a tifstack
-#to create time series of relative intensity across frames
-#OR can allow user to create a polygon which defines ROI, which can be used on other files
-
-#USE_PREVIOUS_ROI flag determines whether to use previous ROI
-
-#files to be analyzed are stored in list file_names
-#meta data about time series are stored in pickle file // .pck is added to original file name
 
 import matplotlib.pyplot as plt
 import file_utilities as util
@@ -19,29 +11,29 @@ import numpy as np
 #source for RoiPoly module 
 #https://github.com/jdoepfert/roipoly.py
 from roipoly import RoiPoly
-import filehandling as fh
-#import pdb
+from py_utilities import tw_filehandling as fh
+import pdb
 
-plt.ion()
+#plt.ion()
 
 #PARAMETERS_TO_SET
-STIM_FLAG=False
+STIM_FLAG=True
 PLOT_STIM_REGION=False
 
 #Analyze with ROI set previously in ROI file described below
-USE_PREVIOUS_ROI=False
+USE_PREVIOUS_ROI=True
 
 #if USE_META_DT is true, then tif files to analyze are set in meta_dt_file
 USE_META_DT_FILE=False
 UNIQUE_STIM_EVENTS=2
 TIME_BETWEEN_FRAMES=.12625
-PREVIOUS_ROI_FILE='stream_ex_dt.tif'
+PREVIOUS_ROI_FILE='Streaming Phasor Capture - 1_XY0_Z0_T000_C0.tif'
 #specific to configuration
-data_path= '/users/tim/python_packages/imaging/datafiles/'
+data_path= '/users/tim/data/2ptmp/may20/'
 meta_dt_file='anim5_plotdata.pck'
 stim_meta_dir='photomanipulation_data/'
 #file_names= ['---Streaming Phasor Capture - 1_XY0_Z0_T000_C0.tif']
-file_names=['stream_ex_dt.tif']
+file_names=['Streaming Phasor Capture - 3_XY0_Z0_T000_C0.tif']
 preframes=20
 postframes=5
 stim_region={}
@@ -57,14 +49,19 @@ if USE_META_DT_FILE:
 for file_name in file_names:
     (im,stim)=util.read_in_tif_and_get_metadata(data_path + file_name)
 
-   
+    if STIM_FLAG:
+        logfile=file_name.split('_')[0]+'.txt'
+        stimfile=data_path + stim_meta_dir + logfile
+        (stim_depths,erroneous_stim_times)=util.get_stim_depths(stimfile)
+        
+        roi_file=stimfile.split('.txt')[0] + '-points.txt'
+        (stim_region['xlist'],stim_region['ylist'])=util.get_stim_region(roi_file,unique_events=UNIQUE_STIM_EVENTS)
 
         
     #take mean of file across all time points
 
     im_mean=np.mean(im['tifstack'],axis=0)
     fig=plt.figure()
-    
     plt.imshow(im_mean,origin='lower')
     if not USE_PREVIOUS_ROI:
         xtxt=input("Enter desired zoom Xvls e.g. 100,200 ")
@@ -75,6 +72,7 @@ for file_name in file_names:
     else:
         print('using previous ROI')
         sumdt=fh.open_pickle(data_path+PREVIOUS_ROI_FILE + '.pck')
+        pdb.set_trace()
         xvls=sumdt['zoom_vls']['xvls']
         yvls=sumdt['zoom_vls']['yvls']
     plt.xlim(xvls)
@@ -113,8 +111,20 @@ for file_name in file_names:
     for cr_roi in my_roi:
         cr_roi.display_roi()
 
-    
+    stim_edges=[]
+    stim_mask=[]
+    for crind in np.arange(len(stim_region['xlist'])):
         
+        stim_xvls=np.array(stim_region['xlist'][crind])-xvls[0]
+        stim_yvls=np.array(stim_region['ylist'][crind])-yvls[0]
+        
+        y=np.zeros(np.shape(im_zoom_mean))
+        
+        y[stim_yvls,stim_xvls]=1
+        y=np.ma.masked_where(y==0,y)
+        stim_mask.append(y)
+
+        stim_edges.append(util.make_edges(stim_xvls,stim_yvls,im_zoom_mean))
 
     for crind in [0,1]:
         try:
@@ -143,19 +153,19 @@ for file_name in file_names:
     (stim_tms,stim_frame_nums)=util.convert_stim_times(stim['stim_frame_nums'],frame_flag=True,time_between_frames=TIME_BETWEEN_FRAMES)
     frame_tms=[float(i) for i in im['time_stamps']]
     deltaf_vls=util.get_delta_f(mn_roi,stim_frame_nums,preframes,postframes,pre_frame_buffer=2)
-    
+
     sumdt['im_mean']=im_zoom_mean
-    #sumdt['stim_mask']=stim_mask
+    sumdt['stim_mask']=stim_mask
     sumdt['mn_roi']=mn_roi
     sumdt['roi_masks']=masks
     sumdt['frame_nums']=[int(i) for i in im['frame_nums']]
     sumdt['frame_tms']=frame_tms
-    #sumdt['stim_tms']=stim_tms
+    sumdt['stim_tms']=stim_tms
     sumdt['deltaf_vls']=deltaf_vls
-    #sumdt['stim_depths']=[float(i) for i in stim_depths]
-    #sumdt['stim_region']=stim_region
-    #sumdt['stim_edges']=stim_edges
-    #sumdt['stim_frame_nums']=stim_frame_nums
+    sumdt['stim_depths']=[float(i) for i in stim_depths]
+    sumdt['stim_region']=stim_region
+    sumdt['stim_edges']=stim_edges
+    sumdt['stim_frame_nums']=stim_frame_nums
     
     fh.save_to_pickle(data_path+file_name + '.pck', sumdt)
 
